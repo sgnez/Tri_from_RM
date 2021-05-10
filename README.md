@@ -1,5 +1,5 @@
 # Tri from RM
-SageMath codes for construction of triorthogonal codes from the Reed-Muller codewords. 
+SageMath codes for construction of triorthogonal codes (and computing their distances) from the Reed-Muller codewords.
 
 Please make sure to install SageMath prior to running the code.
 https://www.sagemath.org
