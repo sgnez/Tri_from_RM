@@ -29,6 +29,14 @@ code +=']'
 
 exec(code)
 
+# The following Ring variables are used when we specifically need to consier
+# variables in the polynomial ring, not generic variables. It is slower and 
+# is used rarely. See CPP_Representation and write_instuctions function below.
+
+R1 = PolynomialRing(FiniteField(2), 6, names = ["y1","y2","y3","y4","y5","y6"])
+y1,y2,y3,y4,y5,y6 = R1.gens()
+
+Ring_Variables=[y1,y2,y3,y4,y5,y6]
 ################################################################################
 #          FUNCTIONS THAT MAKE THE GENERATOR MATRIX FROM POLYNOMIALS           #
 ################################################################################
@@ -192,16 +200,52 @@ def Is_Dist_Larger(Desc, d):
     Vec=vector(Integers(2),[0]*s)
     return Rec_Weight_Maker(Desc,k,s,d,0,0,Vec)
 
+################################################################################
+#                   FUNCTIONS USED FOR TALKING TO C++ CODES                    #
+################################################################################
+
+def CPP_Representation(poly):
+    base=[]
+    for monomial in poly.monomials():
+        num = 0
+        for i in range(6):
+            num*=2
+            if monomial.degree(Ring_Variables[5-i])>0:
+                num+=1
+        base.append(num)
+    return base
+
+#The following function writes the base pairs in the 
+# "poly_finder_instructions.txt" file which is the input of the fast parallel 
+# C++ code for finding the affine equivalence classes of polynomials.
+
+#base_pairs is an array of all base pairs, where the input is in the in terms
+# of ring variables y1,..., y6.
+#weight is the target weight.
+#number_of_threads is the number of cpu threads used.
+#trigger_wait & trigger_random_jumps & max_number_polys -> see the C++ code 
+# for detailed and explanation. It is ususally fine to use the default values.
 
 
-
-
-
-
-
-
-
-
-
+def write_instuctions(base_pairs,weight,number_of_threads=8, trigger_wait=1,
+                              trigger_random_jumps=0, max_number_polys=10000):
+    file = open("poly_finder_instructions.txt", "w")
+    num_bases = len(base_pairs)
+    file.write(str(weight)+"\n");
+    file.write(str(num_bases)+"\n");
+    file.write(str(number_of_threads)+"\n");
+    file.write(str(trigger_wait)+"\n");
+    file.write(str(trigger_random_jumps)+"\n");
+    file.write(str(max_number_polys)+"\n");
+    for [pbase1,pbase2] in base_pairs:
+        base1=CPP_Representation(pbase1)
+        base2=CPP_Representation(pbase2)
+        file.write(str(len(base1))+'\n')
+        for x in base1:
+            file.write(str(x)+'\n')
+        file.write(str(len(base2))+'\n')
+        for x in base2:
+            file.write(str(x)+'\n') 
+    file.close()
 
 
